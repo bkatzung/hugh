@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+<link rel='stylesheet' href='xyinput.css'>
+<link rel='stylesheet' href='hugh.css'>
+<script type='importmap'>
+{
+    "imports": {
+		"modules/": "./"
+    }
+}
+</script>
+<style>
+body { font-family: sans-serif; }
+#input1, #input2 { width: 50px; }
+</style>
+</head>
+<body>
+<p>Paragraph above</p>
+<div style='margin-bottom: 5px;'>Pick: <input id='input1' value='#f00'>
+<span style='display: inline-block; width: 6em;'>&nbsp;</span>
+Continuous: <input id='input2' value='#00f'></div>
+<p>Paragraph below</p>
+<script type='module'>
+const { Hugh } = await import('modules/hugh.esm.js');
+let picker1 = new Hugh({
+    pickMode: 'auto-hsl',
+    showText: 'rgb',
+    withAlpha: true,
+    input: input1,
+    pickText: 'Pick',
+    closeText: 'Close',
+}).attach();
+let picker2 = new Hugh({
+    pickMode: 'auto-hsl',
+    continuous: true,
+    showText: 'hsl',
+    withAlpha: true,
+    input: input2,
+}).attach();
+// document.body.append(picker.picker);
+</script>
+</body>
+</html>

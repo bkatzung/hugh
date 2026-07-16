@@ -1,0 +1,26 @@
+.xyinput {
+    display: inline-block;
+    box-sizing: content-box;
+    border: solid 1px #808080;
+    position: relative;
+}
+.xyinput__marker {
+    display: block;
+    box-sizing: content-box;
+    border: solid 1px #808080;
+    border-radius: 50%;
+    width: 9px; height: 9px;
+    margin-left: -5px; margin-top: -5px;
+    background-color: #fff;
+    position: absolute; top: 0; left: 0;
+}
+.xyinput--x-slider .xyinput__marker {
+    width: 7px; height: 24px;
+    margin-left: -4px; margin-top: -13px;
+    border-radius: 7px;
+}
+.xyinput--y-slider .xyinput__marker {
+    width: 24px; height: 7px;
+    margin-left: -13px; margin-top: -4px;
+    border-radius: 7px;
+}
