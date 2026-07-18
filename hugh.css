@@ -1,10 +1,9 @@
 .clearfix::after { clear: both; content: ''; display: table; }
 .hugh {
-    --color: #000; background-color: #ddd; z-index: 1;
+    --color: #000; background-color: light-dark(#ddd, #444); z-index: 1;
     box-sizing: content-box; width: max-content; padding: 6px;
     border: solid 1px #808080; border-radius: 8px;
 }
-.theme-dark .hugh { background-color: #444; }
 .hugh--pick-hsl .hugh__grid .xyinput {
     --saturation: 100%; background:
     linear-gradient(to top, #000, #0000, #fff),
@@ -35,6 +34,15 @@
     box-sizing: content-box; width: 40px; height: 20px; margin-left: 5px;
     background: linear-gradient(var(--color), var(--color)), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACRJREFUKFNjZGBg+M+AChiRuSAOHRSgOQHVShQHQVWiuIlyBQBIrggFqvTHRwAAAABJRU5ErkJggg==);
 }
+
+/* browser-powered color conversions */
+.hugh-converter { /* (an empty <script>) */
+	color: rgb(from var(--to-rgb) r g b);
+}
+.hugh__input::before {
+	border-top-color: oklch(from var(--color) l c h);
+}
+
 .hugh--readonly .hugh__initial { display: none; }
 .hugh--pick-hsl .hugh__z .xyinput { /* saturation slider */
     background: linear-gradient(to right,
@@ -61,15 +69,10 @@
 }
 .hugh:not(.hugh--with-alpha) .hugh__alpha { display: none; }
 .hugh:not(.hugh--show-text) .hugh__text { display: none; }
-.hugh:not(.hugh--show-text-hex) .hugh__text-hex { display: none; }
-.hugh:not(.hugh--show-text-xyz) .hugh__text-xyz { display: none; }
 .hugh__z, div.hugh__alpha, .hugh__text,
-.hugh__text-hex, .hugh__text-xyz { margin-top: 5px; }
-:is(.hugh__text-xyz, .hugh__text-alpha) input { width: 3em; text-align: right; }
-:is(.hugh__text-hex, .hugh__text-xyz) input { font-family: monospace; }
+.hugh__input { margin-top: 5px; font-family: monospace; }
 .hugh__grid, .hugh__z, .hugh__alpha, .hugh__text { text-align: center; }
-.hugh__input-hex { width: 11em; }
-.theme-dark .hugh__text-xyz { color: #fff; }
+.hugh__input { width: 250px; text-align: center; }
 
 .hugh__wrapper {
     --color: #000; display: inline-block;
