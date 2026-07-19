@@ -32,7 +32,12 @@
     display: inline-block;
     border: solid 1px #808080; border-radius: 10px;
     box-sizing: content-box; width: 30px; height: 20px; margin-left: 5px;
-    background: linear-gradient(var(--color), var(--color)), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACRJREFUKFNjZGBg+M+AChiRuSAOHRSgOQHVShQHQVWiuIlyBQBIrggFqvTHRwAAAABJRU5ErkJggg==);
+}
+.hugh__initial {
+    background: linear-gradient(var(--initial-color), var(--initial-color)), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACRJREFUKFNjZGBg+M+AChiRuSAOHRSgOQHVShQHQVWiuIlyBQBIrggFqvTHRwAAAABJRU5ErkJggg==);
+}
+.hugh__current {
+    background: linear-gradient(hsl(var(--h) var(--s) var(--l) / var(--a)), hsl(var(--h) var(--s) var(--l) / var(--a))), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACRJREFUKFNjZGBg+M+AChiRuSAOHRSgOQHVShQHQVWiuIlyBQBIrggFqvTHRwAAAABJRU5ErkJggg==);
 }
 
 /* browser-powered color conversions */
@@ -81,7 +86,7 @@
 .hugh__wrapper > input { visibility: hidden; }
 .hugh__wrapper > button {
     position: absolute; inset: 0;
-    background: linear-gradient(var(--color), var(--color)), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACRJREFUKFNjZGBg+M+AChiRuSAOHRSgOQHVShQHQVWiuIlyBQBIrggFqvTHRwAAAABJRU5ErkJggg==);
+    background: linear-gradient(var(--button-color), var(--button-color)), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACRJREFUKFNjZGBg+M+AChiRuSAOHRSgOQHVShQHQVWiuIlyBQBIrggFqvTHRwAAAABJRU5ErkJggg==);
 }
 .hugh__wrapper .hugh {
     position: absolute; top: calc(100% + 5px); right: 0;

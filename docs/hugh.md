@@ -2,7 +2,7 @@
 
 `Hugh` is a lightweight, highly customizable color picker module. It attaches to standard HTML `<input>` elements, wrapping them in a visual color picker widget that supports on-the-fly switching between HSL and HSV picking modes, alpha channel transparency, real-time continuous updates, and color display and result formats like hex, RGB, HSL, and OKLCH.
 
-The single-element readout/user input box allows for easy copy-and-paste application of the displayed values as well as sophisticated input options.
+The single-element readout/user input box allows for easy copying-and-pasting of the displayed values as well as sophisticated input options.
 
 `Hugh` handles some simple (or non-standard, such as `hsv`) color inputs internally, but also leverages the browser's native CSS engine for advanced color conversions (such as OKLCH, modern `color(srgb ...)`, relative colors, color mixing, etc.).
 
@@ -221,7 +221,8 @@ The picker widget (`.hugh`) dynamically receives state classes based on its conf
 
 `Hugh` uses CSS custom properties to dynamically update its visual state:
 
-- `--color`: The current color as an HSL string, applied to the picker container and swatches.
+- `--initial-color`: The color for the initial (reference) color swatch.
+- `--button-color`: The color for the toggle button.
 - `--h`: The current hue value (0-360).
 - `--s`: The current saturation value (0%-100%).
 - `--l`: The current lightness value (0%-100%).

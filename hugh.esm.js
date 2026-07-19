@@ -17,7 +17,8 @@ export class Hugh {
 
 	constructor (opts = {}) {
 		this._opts = {
-			// input: the <input> element
+			// input: the <input> element (required)
+			// readOnly: based on <input> state at open
 			defaultColor: '#000',	// if no valid input value
 			pickMode: 'auto-hsl',	// (auto-)?{hsl,hsv}
 			continuous: false,	// continuous update or pick?
@@ -29,11 +30,12 @@ export class Hugh {
 			storeName: 'hughOptions',
 			...opts
 		};
+		this._parts = {};
 
 		const proto = Object.getPrototypeOf(this);
 		const input = opts.input;
 
-		if (!input) throw new RangeError('Input required');
+		if (input?.tagName !== 'INPUT') throw new TypeError('<input> required');
 		this._onCode = proto._onCode.bind(this);
 		this._onTextEvent = proto._onTextEvent.bind(this);
 		this._onVisualEvent = proto._onVisualEvent.bind(this);
@@ -43,11 +45,11 @@ export class Hugh {
 
 	// Attach the picker to the <input>
 	attach () {
-		const input = this.input, parent = input?.parentElement;
+		const input = this._opts.input, parent = input.parentElement;
 
-		if (!input || parent.classList.contains('hugh__wrapper')) return this;
+		if (parent.classList.contains('hugh__wrapper')) return this;
 
-		const wrapper = document.createElement('span'), button = document.createElement('button');
+		const wrapper = this._parts.wrapper = document.createElement('span'), button = document.createElement('button');
 
 		wrapper.className = 'hugh__wrapper';
 		input.replaceWith(wrapper);
@@ -104,30 +106,19 @@ export class Hugh {
 	get input () { return this._opts.input; }
 
 	// Respond to code modifications to the primary <input>
-	_onCode (e) {
-		const input = this.input, color = this.parseColor(input.value);
-		const withAlpha = this._opts.withAlpha;
+	_onCode (_e) {
+		const opts = this._opts;
+		const color = this.parseColor(opts.input.value);
 
 		if (!color.isValid()) return;	// Ignore invalid colors
-		if (!withAlpha) color.setAlpha(1);
-
-		/*
-		 * If the picker is closed, or open in pick mode, update the button
-		 * swatch. If the picker is open, update the initial color.
-		 */
-		const str = color.toString();
-		const picker = this._parts?.picker, parent = picker?.parentElement, continuous = this._opts.continuous;
-
-		if (!parent || !continuous) input.parentElement.style.setProperty('--color', str);
-		if (parent) {
-			this._initialColor = color;
-			this._parts.initial.style.setProperty('--color', str);
-		}
+		if (!opts.withAlpha) color.setAlpha(1);
+		this._parts?.wrapper.style.setProperty('--initial-color', color.toString());
+		this._initialColor = color;
 	}
 
 	// Respond to text <input> changes
 	_onTextEvent (e) {
-		const opts = this._opts, input = opts.input;
+		const opts = this._opts;
 
 		if (opts.readOnly) {
 			e.preventDefault();
@@ -136,7 +127,7 @@ export class Hugh {
 		}
 		if (!opts.showText) return;
 
-		const parts = this._parts, picker = parts.picker;
+		const parts = this._parts;
 		const format = FORMATS[parts.textMode.selectedIndex];
 		const color = this.parseColor(parts.input.value, format);
 
@@ -153,7 +144,6 @@ export class Hugh {
 	_onVisualEvent (e) {
 		const parts = this._parts, grid = parts.gridXYI, z = parts.zXYI;
 		const opts = this._opts, height = Hugh.gridHeight, color = this._color;
-		const input = opts.input;
 
 		if (opts.readOnly) {
 			e.preventDefault();
@@ -179,9 +169,8 @@ export class Hugh {
 
 	// Open the picker
 	open () {
-		const input = this.input, picker = this.widget;
+		const input = this._opts.input, picker = this.widget;
 
-		if (!input) return;
 		if (input.disabled || input.readOnly) {
 			picker.classList.add('hugh--readonly');
 			this._opts.readOnly = true;
@@ -246,7 +235,7 @@ export class Hugh {
 		return tinycolor(computed);
 	}
 
-	// Set the color (to a tinycolor value)
+	// Set the current color (to a tinycolor value)
 	setColor (color) {
 		const opts = this._opts;
 
@@ -255,8 +244,8 @@ export class Hugh {
 		else this._color = color.toHsl();
 		if (!opts.withAlpha) this._color.a = 1;
 		this._oklchStr = '';
-		if (opts.input && opts.continuous) this._updateInput('both');
-		if (this._parts) {
+		if (opts.continuous) this._updateInput('both');
+		if (this._parts.picker) {
 			this._updateVisual();
 			this._updateText();
 		}
@@ -264,18 +253,15 @@ export class Hugh {
 
 	_setInitialColor () {
 		const opts = this._opts;
-		let color;
+		let color = tinycolor(opts.input.value);
 
-		if (opts.input) {
-			color = tinycolor(opts.input.value);
-			this.setColor(color);
-		}
-		if (!color?.isValid()) {
+		if (color.isValid()) this.setColor(color);
+		else {
 			color = tinycolor(opts.defaultColor);
 			this.setColor(color);
 			if (opts.continuous) this._updateInput('both');
 		}
-		this._parts?.initial.style.setProperty('--color', color.toString())
+		this._parts?.wrapper.style.setProperty('--initial-color', color.toString())
 		this._initialColor = color.clone();
 	}
 
@@ -283,15 +269,12 @@ export class Hugh {
 	setPickMode (mode, all = false) {
 		const prevMode = this._pickMode, parts = this._parts;
 
-		if (mode === 'sample' && window.EyeDropper) {
+		if (mode === 'sample' && globalThis.EyeDropper) {
 			Hugh._eyeDropper ||= new EyeDropper();
 			Hugh._eyeDropper.open().then(r => this.setColor(tinycolor(r.sRGBHex)), () => {});
 			if (parts) parts.pickMode.selectedIndex = (prevMode === 'hsv') ? 1 : 0;
 		}
-		switch (mode) {
-		case 'hsl': case 'hsv': break;
-		default: return;
-		}
+		if (mode !== 'hsl' && mode !== 'hsv') return;
 		if (all) {
 			if (this._opts.storeName) {
 				let config;
@@ -344,19 +327,16 @@ export class Hugh {
 
 	// Update the <input> value and wrapper CSS --color
 	_updateInput (type = '') {
-		const opts = this._opts, input = opts.input;
+		const opts = this._opts, input = opts.input, rawFormat = opts.format;
+		const format = (rawFormat === 'hex') ? ((this._color.a < 1)? 'hex8' : 'hex6') : rawFormat;
+		const color = tinycolor(this._color);
+		const str = (format === 'oklch') ? this.currentOKLCHStr : color.toString(format);
 
-		if (input) {
-			const color = tinycolor(this._color), rawFormat = opts.format;
-			const format = (rawFormat === 'hex') ? ((this._color.a < 1)? 'hex8' : 'hex6') : rawFormat;
-			const str = (format === 'oklch') ? this.currentOKLCHStr : color.toString(format);
-
-			input.parentElement.style.setProperty('--color', color.toHslString());
-			if (input.value !== str) {
-				input.value = str;
-				if (type === 'input' || type === 'both') input.dispatchEvent(new InputEvent('input'));
-				if (type === 'change' || type === 'both') input.dispatchEvent(new Event('change'));
-			}
+		if (input.value !== str) {
+			this._parts.wrapper.style.setProperty('--button-color', color.toHslString());
+			input.value = str;
+			if (type === 'input' || type === 'both') input.dispatchEvent(new InputEvent('input'));
+			if (type === 'change' || type === 'both') input.dispatchEvent(new Event('change'));
 		}
 	}
 
@@ -364,7 +344,7 @@ export class Hugh {
 	_updateText () {
 		if (!this._opts.showText) return;
 
-		const parts = this._parts, picker = parts.picker;
+		const parts = this._parts, input = parts.input;
 		const format = FORMATS[parts.textMode.selectedIndex];
 		const color = tinycolor(this._color);
 		const withAlpha = this._opts.withAlpha;
@@ -372,46 +352,47 @@ export class Hugh {
 
 		switch (format) {
 		case 'hex':
-			parts.input.value = color.toString((withAlpha && this._color.a < 1) ? 'hex8' : 'hex');
+			input.value = color.toString((withAlpha && this._color.a < 1) ? 'hex8' : 'hex');
 			break;
 		case 'hsl':
 		{
 			const { h, s, l, a } = color.toHsl();
 
-			parts.input.value = `hsl(${Math.round(h)} ${pct(s)} ${pct(l)}${(withAlpha && a < 1) ? (' / ' + pct(a)) : ''})`;
+			input.value = `hsl(${Math.round(h)} ${pct(s)} ${pct(l)}${(withAlpha && a < 1) ? (' / ' + pct(a)) : ''})`;
 			break;
 		}
 		case 'hsv':
 		{
 			const { h, s, v, a } = color.toHsv();
 
-			parts.input.value = `hsv(${Math.round(h)} ${pct(s)} ${pct(v)}${(withAlpha && a < 1) ? (' / ' + pct(a)) : ''})`;
+			input.value = `hsv(${Math.round(h)} ${pct(s)} ${pct(v)}${(withAlpha && a < 1) ? (' / ' + pct(a)) : ''})`;
 			break;
 		}
 		case 'oklch':
-			parts.input.value = this.currentOKLCHStr;
+			input.value = this.currentOKLCHStr;
 			break;
 		case 'rgb':
 		{
 			const { r, g, b, a } = color.toRgb();
 
-			parts.input.value = `rgb(${r} ${g} ${b}${(withAlpha && a < 1) ? (' / ' + pct(a)) : ''})`;
+			input.value = `rgb(${r} ${g} ${b}${(withAlpha && a < 1) ? (' / ' + pct(a)) : ''})`;
 			break;
 		}
 		case '': // Allows the user to revokably mute the output (e.g. to reduce distraction)
-			parts.input.value = '';
+			input.value = '';
 			break;
 		}
 	}
 
 	// Update the visual inputs
 	_updateVisual (partial = false) {
-		const color = this._color, tc = tinycolor(color), hsl = tc.toHsl(), parts = this._parts, pps = parts.picker.style;
+		const color = this._color, tc = tinycolor(color), hsl = tc.toHsl();
+		const parts = this._parts, pps = parts.picker.style;
 
-		pps.setProperty('--color', tc.toHslString());
 		pps.setProperty('--h', hsl.h);
-		pps.setProperty('--s', Math.round(hsl.s * 100) + '%');
-		pps.setProperty('--l', Math.round(hsl.l * 100) + '%');
+		pps.setProperty('--s', hsl.s * 100);
+		pps.setProperty('--l', hsl.l * 100);
+		pps.setProperty('--a', hsl.a);
 		if (partial) return;		// Update CSS props only
 
 		const height = Hugh.gridHeight;
@@ -429,23 +410,23 @@ export class Hugh {
 				parts.zXYI.x = Math.round(color.s * 250);
 			} else parts.gridXYI.setXY(245, ly);
 		}
-		parts.picker.style.setProperty('--color', tinycolor(color).toHslString());
 		parts.alphaXYI.x = Math.round(color.a * 250);
 	}
 
 	// Build the picker widget if needed and return its root element
 	get widget () {
-		if (this._parts) return this._parts.picker;
+		if (this._parts.picker) return this._parts.picker;
 
-		const opts = this._opts, parts = this._parts = {}, picker = parts.picker = document.createElement('div');
-		const sa = this._opts.withAlpha ? ' / A' : '';
+		const parts = this._parts, picker = parts.picker = document.createElement('div');
+		const classList = picker.classList;
+		const opts = this._opts, sa = opts.withAlpha ? ' / A' : '';
 
 		picker.innerHTML =
 `<div class='hugh__right'><button title='Pick color' aria-label='Pick color' class='hugh__pick'></button>
 <button title='Close picker' aria-label='Close picker' class='hugh__close'></button></div>
 <div class='hugh__left'><select title='Pick mode' aria-label='Pick mode' class='hugh__pick-mode'>
 <option>HSL</option><option>HSV</option>${
-window.EyeDropper ? '<option>Sample</option>' : ''
+globalThis.EyeDropper ? '<option>Sample</option>' : ''
 }<option>HSL All</option><option>HSV All</option>
 </select> <span title='Initial color' aria-label='Initial color' aria-role='button' class='hugh__initial' tabindex='0'>&nbsp;</span>
 <span title='Current color' aria-label='Current color' aria-role='button' class='hugh__current'>&nbsp;</span></div>
@@ -488,9 +469,9 @@ window.EyeDropper ? '<option>Sample</option>' : ''
 		case 'auto-hsv': pickMode ||= 'hsv'; break;
 		}
 		picker.className = 'hugh';
-		if (opts.withAlpha) picker.classList.add('hugh--with-alpha');
-		if (opts.showText) picker.classList.add('hugh--show-text');
-		if (opts.continuous) picker.classList.add('hugh--continuous');
+		if (opts.withAlpha) classList.add('hugh--with-alpha');
+		if (opts.showText) classList.add('hugh--show-text');
+		if (opts.continuous) classList.add('hugh--continuous');
 		parts.pick.textContent = opts.pickText;
 		parts.close.textContent = opts.closeText;
 		parts.gridXYI = new XYInput({ width: 251, height: Hugh.gridHeight + 1 });
