@@ -30,8 +30,8 @@
 .hugh__grid::before { clear: both; content: ''; height: 3px; display: table; }
 .hugh__initial, .hugh__current {
     display: inline-block;
-    border: solid 1px #808080;
-    box-sizing: content-box; width: 40px; height: 20px; margin-left: 5px;
+    border: solid 1px #808080; border-radius: 10px;
+    box-sizing: content-box; width: 30px; height: 20px; margin-left: 5px;
     background: linear-gradient(var(--color), var(--color)), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACRJREFUKFNjZGBg+M+AChiRuSAOHRSgOQHVShQHQVWiuIlyBQBIrggFqvTHRwAAAABJRU5ErkJggg==);
 }
 

@@ -8,7 +8,7 @@ import tinycolor from '@tinycolor';
 import XYInput from '@xyinput';
 
 export const HUGH_SYMBOL = Symbol('Hugh');
-const FORMATS = ['', 'hex', 'rgb', 'hsl', 'hsv', 'oklch'];
+const FORMATS = ['', 'hex', 'rgb', 'hsl', 'hsv', 'oklch']; // Text readout/input box format/hint
 
 export class Hugh {
 	static gridHeight = 150;		// 100 / 150 / 200 / 250
@@ -25,7 +25,7 @@ export class Hugh {
 			closeText: 'X',
 			withAlpha: false,	// include alpha channel
 			showText: false,	// true / false / hex / rgb / hsl / hsv / oklch
-			format: '',			// '' / hex / rgb / hsl / hsv / oklch
+			format: 'hex',		// <input> value format (hex / rgb / hsl / hsv / oklch)
 			storeName: 'hughOptions',
 			...opts
 		};
@@ -75,21 +75,24 @@ export class Hugh {
 
 	// Get the current color as an oklch string (as converted by the browser)
 	get currentOKLCHStr () {
+		if (this._oklchStr) return this._oklchStr;
+
 		const input = this._parts?.input;
 
-		if (!input) return;
+		if (!input) return undefined;
 
 		// Turn the incredibly long raw value into something a bit more compact
 		const withAlpha = this._opts.withAlpha;
 		const raw = getComputedStyle(input, 'before').borderTopColor;
 		const parts = Array.from(raw.matchAll(/([0-9\.]+)(%?)/g));
-		const l = String(Math.round(parseFloat(parts[0][1]) * (parts[0][2] ? 100 : 10000)) / 100) + '%';
-		const c = String(Math.round(parseFloat(parts[1][1]) * (parts[1][2] ? 100 : 10000)) / 10000);
+		const l = String(Math.round(parseFloat(parts[0][1]) * (parts[0][2] ? 1 : 100))) + '%';
+		const c = (parseFloat(parts[1][1]) / (parts[1][2] ? 100 : 1)).toFixed(4);
 		const h = Math.round(parts[2][1]);
 		const aPct = (parts.length > 3) ? Math.round(parseFloat(parts[3][1]) * (parts[3][2] ? 1 : 100)) : 100;
 		const a = (withAlpha && aPct < 100) ? ` / ${aPct}%` : '';
 
-		return `oklch(${l} ${c} ${h}${a})`;
+		this._oklchStr = `oklch(${l} ${c} ${h}${a})`;
+		return this._oklchStr;
 	}
 
 	// Return the existing Hugh for an <input> element (or undefined)
@@ -168,6 +171,7 @@ export class Hugh {
 			color.l = (height - grid.y) / height;
 		}
 		if (opts.withAlpha) color.a = parts.alphaXYI.x / 250;
+		this._oklchStr = '';
 		if (opts.continuous) this._updateInput('input');
 		this._updateVisual(true);
 		this._updateText();
@@ -246,12 +250,11 @@ export class Hugh {
 	setColor (color) {
 		const opts = this._opts;
 
-		if (color.isValid()) {
-			if (this._pickMode === 'hsv') this._color = color.toHsv();
-			else this._color = color.toHsl();
-		} else return;
-
+		if (!color.isValid()) return;
+		if (this._pickMode === 'hsv') this._color = color.toHsv();
+		else this._color = color.toHsl();
 		if (!opts.withAlpha) this._color.a = 1;
+		this._oklchStr = '';
 		if (opts.input && opts.continuous) this._updateInput('both');
 		if (this._parts) {
 			this._updateVisual();
@@ -344,18 +347,9 @@ export class Hugh {
 		const opts = this._opts, input = opts.input;
 
 		if (input) {
-			let format = opts.format;
-
-			switch (format) {
-			case 'hex':
-				format = (this._color.a < 1) ? 'hex8' : 'hex6';
-				break;
-			case 'oklch':
-				format = 'hsl';
-				break;
-			}
-
-			const color = tinycolor(this._color), str = color.toString(format);
+			const color = tinycolor(this._color), rawFormat = opts.format;
+			const format = (rawFormat === 'hex') ? ((this._color.a < 1)? 'hex8' : 'hex6') : rawFormat;
+			const str = (format === 'oklch') ? this.currentOKLCHStr : color.toString(format);
 
 			input.parentElement.style.setProperty('--color', color.toHslString());
 			if (input.value !== str) {
@@ -366,7 +360,7 @@ export class Hugh {
 		}
 	}
 
-	// Update the text inputs
+	// Update the text input box
 	_updateText () {
 		if (!this._opts.showText) return;
 
@@ -404,7 +398,7 @@ export class Hugh {
 			parts.input.value = `rgb(${r} ${g} ${b}${(withAlpha && a < 1) ? (' / ' + pct(a)) : ''})`;
 			break;
 		}
-		case '':
+		case '': // Allows the user to revokably mute the output (e.g. to reduce distraction)
 			parts.input.value = '';
 			break;
 		}
