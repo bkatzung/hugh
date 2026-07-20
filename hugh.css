@@ -45,7 +45,7 @@
 	color: rgb(from var(--to-rgb) r g b);
 }
 .hugh__input::before {
-	border-top-color: oklch(from var(--color) l c h);
+	border-top-color: oklch(from hsl(var(--h) var(--s) var(--l)) l c h);
 }
 
 .hugh--readonly .hugh__initial { display: none; }
