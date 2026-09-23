@@ -253,15 +253,19 @@ export class Hugh {
 
 	_setInitialColor () {
 		const opts = this._opts;
-		let color = tinycolor(opts.input.value);
+		let color = this.parseColor(opts.input.value);
 
 		if (color.isValid()) this.setColor(color);
 		else {
-			color = tinycolor(opts.defaultColor);
+			color = this.parseColor(opts.defaultColor);
 			this.setColor(color);
 			if (opts.continuous) this._updateInput('both');
 		}
-		this._parts?.wrapper.style.setProperty('--initial-color', color.toString())
+		
+		const colorStr = color.toString();
+
+		this._parts?.wrapper.style.setProperty('--initial-color', colorStr);
+		this._parts?.wrapper.style.setProperty('--button-color', colorStr);
 		this._initialColor = color.clone();
 	}
 
